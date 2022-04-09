@@ -2,29 +2,76 @@
 title: "Lab 1"
 author: "Ksenia Gordeeva"
 date: "4/9/2022"
-output: html_document
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+
+library(tidyverse)
+library(rio)
+library(here)
+library(dplyr)
 ```
 
-## R Markdown
+### Data Structures
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+```{r}
+set.seed(123) # Set random number generation
 
-```{r cars}
-summary(cars)
+m <- lm(mpg ~ hp + cyl + drat, mtcars)
+
+l <- list(a = list(m = matrix(1:12, ncol = 3),
+              	   v = 1:7),
+          b = data.frame(student = 1:15,
+                         score = rnorm(15, 100, 10))) 
 ```
 
-## Including Plots
+1. From the model results:
+	* Extract the qr tolerance (`tol`).
+```{r}
+#str(m)
+#Extract the qr tolerance
+m[["qr"]][["tol"]]
 
-You can also embed plots, for example:
+#Alternatively: 
+#m$qr$tol
+```
+	* Extract the term labels from the model.
+```{r}
+#Term Labels
+term_attributes <- attr(m$model, "terms")
+attr(term_attributes, "term.labels")
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+#Alternatively:
+#attr(m[["terms"]], "term.labels")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+2. From the list
+	* Use at least two different methods to extract `m`.
+```{r}
+#1
+l[["a"]][["m"]]
+
+#2
+l$a$m
+```
+	* Extract the third column of `m`. Maintain the dimensions (matrix structure).
+```{r}
+l[["a"]][["m"]][ ,3, drop = FALSE]
+```
+	* Extract the score for student 7.
+```{r}
+l$b[7, ]
+
+#ALternatively: 
+#l[["b"]][7, ]
+```
+
