@@ -6,7 +6,7 @@ output:
   html_document:
     toc: true
     toc_float: true
-    code_folding: hide
+
 ---
 
 ```{r setup, include=FALSE}
@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE,
 library(tidyverse)
 library(rio)
 library(here)
-library(dplyr)
+library(ggplot2)
 ```
 
 ### Data Structures
@@ -44,6 +44,7 @@ m[["qr"]][["tol"]]
 #Alternatively: 
 #m$qr$tol
 ```
+
 	* Extract the term labels from the model.
 ```{r}
 #Term Labels
@@ -63,10 +64,12 @@ l[["a"]][["m"]]
 #2
 l$a$m
 ```
+
 	* Extract the third column of `m`. Maintain the dimensions (matrix structure).
 ```{r}
 l[["a"]][["m"]][ ,3, drop = FALSE]
 ```
+
 	* Extract the score for student 7.
 ```{r}
 l$b[7, ]
@@ -74,4 +77,77 @@ l$b[7, ]
 #ALternatively: 
 #l[["b"]][7, ]
 ```
+
+### Loops
+3. Read in the `insurance_coverage.csv` file, which is in the data folder in the repo. Split the data file by `age_bucket` and `sex_name`.
+
+```{r}
+ins_cov <- read_csv(here("~/Documents/Uoregon/spring 2022/c3-fp-2022/data/insurance_coverage.csv"))
+
+#by_age <- split(ins_cov, ins_cov$age_bucket)
+
+#by_sexname <- split(ins_cov, ins_cov$sex_name)
+
+by_age_sex <- split(ins_cov, 
+                    list(ins_cov$age_bucket, ins_cov$sex_name))
+```
+
+4. Use a `for` loop to calculate the mean health care population (`hc_pop`) for each `age_bucket`/`sex_name` combination.
+```{r}
+hc_age_sex <- vector("list", length(by_age_sex))
+
+for(i in seq_along(hc_age_sex)) {
+	hc_age_sex[i] <- mean(by_age_sex[[i]]$hc_pop, na.rm = TRUE)
+	names(hc_age_sex)[i] <- names(by_age_sex)[i]
+}
+
+```
+5. Replicate this calculation with `lapply`, `sapply`, and `vapply`
+
+```{r}
+## lapply
+hc_age_sex2 <- lapply(by_age_sex, function(df) mean(df$hc_pop, na.rm = TRUE))
+
+## sapply
+hc_age_sex3 <- sapply(by_age_sex, function(df) mean(df$hc_pop, na.rm = TRUE))
+
+## vapply
+hc_age_sex4 <- vapply(by_age_sex, function(df) mean(df$hc_pop, na.rm = TRUE),
+                      FUN.VALUE = double(1))
+```
+6. Produce separate plots showing the change in `hc_pop` from 2014 to 2015 for each `age_bucket`/`sex_name` combination (with a single loop). Set the `hc_pop` axis so the limits equal the overall minimum and maximum values for `hc_pop`.
+
+```{r}
+min <- min(ins_cov$hc_pop)
+max <- max(ins_cov$hc_pop)
+
+theme_set(theme_minimal())
+
+plots <- lapply(by_age_sex, function(df) {
+	ggplot(df, aes(x = as.factor(year), y = hc_pop)) +
+		geom_col(alpha = .6) +
+    coord_cartesian(ylim = c(min, max)) +
+    labs(title = names(by_age_sex)[i],
+         x = "Year",
+         y = "Health Care Population")
+    #theme_minimal()
+})
+
+plots
+```
+7. Use a `for` loop to save the plots to a folder on your computer
+```{r}
+dir.create(here::here("plots"))
+filenames <- paste0(here::here("plots", "hc_pop"), names(by_age_sex), ".png")
+
+for(i in seq_along(plots)) {
+	ggsave(filenames[i],
+	       plots[[i]],
+	       device = "png",
+	       width = 6.5,
+	       height = 8)
+}
+```
+
+
 
